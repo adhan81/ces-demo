@@ -1,0 +1,18 @@
+{
+  "name": "ces-demo",
+  "version": "1.0.0",
+  "main": "index.html",
+  "scripts": {
+    "test": "node test-demo.js",
+    "start": "python3 -m http.server 8000 || npx serve .",
+    "serve": "npx serve ."
+  },
+  "keywords": ["demo", "ces", "revenue", "ssp", "adtech"],
+  "author": "",
+  "license": "ISC",
+  "description": "CES Demo - Revenue Scanner / Deal Watch interactive presentation",
+  "dependencies": {
+    "playwright": "^1.57.0"
+  },
+  "devDependencies": {}
+}

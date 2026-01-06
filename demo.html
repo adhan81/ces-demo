@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revenue Leak Scanner - CES Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --text-primary: #ffffff;
+      --text-secondary: #8b8b9a;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-yellow: #eab308;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --border-color: #2a2a3a;
+    }
+
+    body {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.scanning { background: var(--accent-blue); }
+    .status-dot.complete { background: var(--accent-green); }
+    .status-dot.warning { background: var(--accent-yellow); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Stage 1: Scanning */
+    .stage {
+      display: none;
+      padding: 24px 32px;
+      min-height: calc(100vh - 69px);
+    }
+
+    .stage.active {
+      display: block;
+    }
+
+    .stage-1-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      grid-template-rows: auto 1fr;
+      gap: 24px;
+      height: calc(100vh - 117px);
+    }
+
+    /* Video Panel */
+    .video-panel {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      grid-row: span 2;
+    }
+
+    .video-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .video-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ssp-logo {
+      width: 24px;
+      height: 24px;
+      background: #7c3aed;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .video-container {
+      width: 100%;
+      height: calc(100% - 48px);
+      background: #000;
+    }
+
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* SSP Status Panel */
+    .ssp-panel {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .ssp-panel-header {
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+    }
+
+    .ssp-list {
+      padding: 16px;
+    }
+
+    .ssp-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .ssp-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .ssp-item-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .ssp-item-logo.magnite { background: #7c3aed; }
+    .ssp-item-logo.index { background: #0ea5e9; }
+    .ssp-item-logo.triplelift { background: #f97316; }
+    .ssp-item-logo.xandr { background: #10b981; }
+
+    .ssp-item-info {
+      flex: 1;
+    }
+
+    .ssp-item-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .ssp-item-status {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    .ssp-item-progress {
+      width: 60px;
+      text-align: right;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--bg-primary);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-blue);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* Findings Panel */
+    .findings-panel {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .findings-header {
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .findings-list {
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .finding-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border-left: 3px solid transparent;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    .finding-item.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .finding-item.critical { border-left-color: var(--accent-red); }
+    .finding-item.warning { border-left-color: var(--accent-yellow); }
+    .finding-item.info { border-left-color: var(--accent-blue); }
+
+    .finding-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .finding-icon.critical { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+    .finding-icon.warning { background: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); }
+
+    .finding-content {
+      flex: 1;
+    }
+
+    .finding-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .finding-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .finding-impact {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-green);
+    }
+
+    /* Stage 2: Results */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .result-card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-4px);
+    }
+
+    .result-card.critical { border-top: 4px solid var(--accent-red); }
+    .result-card.warning { border-top: 4px solid var(--accent-yellow); }
+    .result-card.info { border-top: 4px solid var(--accent-blue); }
+
+    .result-rank {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .rank-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .result-ssp {
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+    }
+
+    .result-deal {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .result-issue {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .result-impact {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .impact-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .impact-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    .result-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    /* Stage 3: Deep Dive */
+    .deep-dive-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .chart-panel {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      padding: 24px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .chart-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .chart-container {
+      height: 300px;
+      position: relative;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .recommendation-panel {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      padding: 24px;
+    }
+
+    .rec-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .rec-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .rec-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .rec-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .rec-content {
+      margin-bottom: 24px;
+    }
+
+    .rec-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .rec-number {
+      width: 24px;
+      height: 24px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .rec-text {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .action-button {
+      width: 100%;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Navigation */
+    .nav-buttons {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      padding: 12px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--bg-secondary);
+      border-color: var(--accent-blue);
+    }
+
+    .nav-btn.primary {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    /* Stage titles */
+    .stage-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stage-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">RS</div>
+      <span class="logo-text">Revenue Scanner</span>
+    </div>
+    <div class="header-status">
+      <div class="status-badge">
+        <div class="status-dot scanning" id="statusDot"></div>
+        <span id="statusText">Scanning SSPs...</span>
+      </div>
+      <div class="status-badge">
+        Publisher: Redfin
+      </div>
+    </div>
+  </header>
+
+  <!-- Stage 1: Scanning -->
+  <section class="stage active" id="stage1">
+    <div class="stage-1-layout">
+      <!-- Main Video Panel -->
+      <div class="video-panel">
+        <div class="video-header">
+          <div class="video-title">
+            <div class="ssp-logo">M</div>
+            <span>Magnite DV+</span>
+          </div>
+          <span style="color: var(--accent-green); font-size: 13px;">Live Scan</span>
+        </div>
+        <div class="video-container">
+          <video id="magniteVideo" muted>
+            <source src="recordings-v8/magnite-recording.webm" type="video/webm">
+          </video>
+        </div>
+      </div>
+
+      <!-- SSP Status Panel -->
+      <div class="ssp-panel">
+        <div class="ssp-panel-header">SSP Scan Status</div>
+        <div class="ssp-list">
+          <div class="ssp-item">
+            <div class="ssp-item-logo magnite">M</div>
+            <div class="ssp-item-info">
+              <div class="ssp-item-name">Magnite DV+</div>
+              <div class="ssp-item-status" id="magniteStatus">Authenticating...</div>
+            </div>
+            <div class="ssp-item-progress">
+              <span id="magnitePercent">0%</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="magniteFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ssp-item">
+            <div class="ssp-item-logo index">IX</div>
+            <div class="ssp-item-info">
+              <div class="ssp-item-name">Index Exchange</div>
+              <div class="ssp-item-status" id="indexStatus">Waiting...</div>
+            </div>
+            <div class="ssp-item-progress">
+              <span id="indexPercent">0%</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="indexFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ssp-item">
+            <div class="ssp-item-logo triplelift">TL</div>
+            <div class="ssp-item-info">
+              <div class="ssp-item-name">TripleLift</div>
+              <div class="ssp-item-status" id="tripleliftStatus">Waiting...</div>
+            </div>
+            <div class="ssp-item-progress">
+              <span id="tripleliftPercent">0%</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="tripleliftFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ssp-item">
+            <div class="ssp-item-logo xandr">XN</div>
+            <div class="ssp-item-info">
+              <div class="ssp-item-name">Xandr</div>
+              <div class="ssp-item-status" id="xandrStatus">Waiting...</div>
+            </div>
+            <div class="ssp-item-progress">
+              <span id="xandrPercent">0%</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="xandrFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Findings Panel -->
+      <div class="findings-panel">
+        <div class="findings-header">
+          <span>Preliminary Findings</span>
+          <span id="findingsCount" style="color: var(--accent-yellow); font-size: 13px;">0 issues detected</span>
+        </div>
+        <div class="findings-list" id="findingsList">
+          <!-- Findings will be added dynamically -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 2: Results -->
+  <section class="stage" id="stage2">
+    <h1 class="stage-title">Revenue Leak Analysis Complete</h1>
+    <p class="stage-subtitle">3 issues identified across your SSP partnerships. Estimated annual impact: <strong style="color: var(--accent-green);">$156,000</strong></p>
+
+    <div class="results-grid">
+      <!-- Result 1 -->
+      <div class="result-card critical" onclick="goToStage(3)">
+        <div class="result-rank">
+          <div class="rank-badge">1</div>
+          <span class="result-ssp">Magnite DV+</span>
+        </div>
+        <div class="result-deal">T-Mobile Mobile Deal</div>
+        <div class="result-issue">Floor price set at $0.30 but eCPM consistently clearing at $1-3. Significant bid shading detected.</div>
+        <div class="result-impact">
+          <div>
+            <div class="impact-label">Monthly Opportunity</div>
+            <div class="impact-value">+$10,000</div>
+          </div>
+        </div>
+        <div class="result-metrics">
+          <div class="metric">
+            <div class="metric-label">Current eCPM</div>
+            <div class="metric-value">$1.85</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Floor Price</div>
+            <div class="metric-value">$0.30</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result 2 -->
+      <div class="result-card warning">
+        <div class="result-rank">
+          <div class="rank-badge">2</div>
+          <span class="result-ssp">Magnite DV+</span>
+        </div>
+        <div class="result-deal">T-Mobile Desktop Deal</div>
+        <div class="result-issue">Volume collapsed 99% over 7 months. Deal may be stale or buyer has shifted budget.</div>
+        <div class="result-impact">
+          <div>
+            <div class="impact-label">Monthly Opportunity</div>
+            <div class="impact-value">+$2,500</div>
+          </div>
+        </div>
+        <div class="result-metrics">
+          <div class="metric">
+            <div class="metric-label">Jan Volume</div>
+            <div class="metric-value">1.2M</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Aug Volume</div>
+            <div class="metric-value">12K</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result 3 -->
+      <div class="result-card info">
+        <div class="result-rank">
+          <div class="rank-badge">3</div>
+          <span class="result-ssp">Magnite DV+</span>
+        </div>
+        <div class="result-deal">Apple TV+ Deal</div>
+        <div class="result-issue">19K bid requests over 5 months with 0 bid responses. Deal appears misconfigured or inactive.</div>
+        <div class="result-impact">
+          <div>
+            <div class="impact-label">Monthly Opportunity</div>
+            <div class="impact-value">+$500</div>
+          </div>
+        </div>
+        <div class="result-metrics">
+          <div class="metric">
+            <div class="metric-label">Bid Requests</div>
+            <div class="metric-value">19,000</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Responses</div>
+            <div class="metric-value" style="color: var(--accent-red)">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 3: Deep Dive -->
+  <section class="stage" id="stage3">
+    <h1 class="stage-title">T-Mobile Mobile Deal Analysis</h1>
+    <p class="stage-subtitle">Deal ID: 3768900 | Magnite DV+</p>
+
+    <div class="deep-dive-layout">
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div class="chart-title">eCPM vs Floor Price (Jan - Aug 2025)</div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--accent-blue)"></div>
+              <span>eCPM</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--accent-red)"></div>
+              <span>Floor ($0.30)</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 700 280">
+            <!-- Grid lines -->
+            <g stroke="#2a2a3a" stroke-width="1">
+              <line x1="50" y1="40" x2="680" y2="40" />
+              <line x1="50" y1="100" x2="680" y2="100" />
+              <line x1="50" y1="160" x2="680" y2="160" />
+              <line x1="50" y1="220" x2="680" y2="220" />
+            </g>
+            <!-- Y-axis labels -->
+            <g fill="#8b8b9a" font-size="11">
+              <text x="40" y="44" text-anchor="end">$3.00</text>
+              <text x="40" y="104" text-anchor="end">$2.00</text>
+              <text x="40" y="164" text-anchor="end">$1.00</text>
+              <text x="40" y="224" text-anchor="end">$0.00</text>
+            </g>
+            <!-- X-axis labels -->
+            <g fill="#8b8b9a" font-size="11">
+              <text x="90" y="250" text-anchor="middle">Jan</text>
+              <text x="170" y="250" text-anchor="middle">Feb</text>
+              <text x="250" y="250" text-anchor="middle">Mar</text>
+              <text x="330" y="250" text-anchor="middle">Apr</text>
+              <text x="410" y="250" text-anchor="middle">May</text>
+              <text x="490" y="250" text-anchor="middle">Jun</text>
+              <text x="570" y="250" text-anchor="middle">Jul</text>
+              <text x="650" y="250" text-anchor="middle">Aug</text>
+            </g>
+            <!-- Floor price line -->
+            <line x1="50" y1="202" x2="680" y2="202" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+            <!-- eCPM area -->
+            <path d="M90,130 L170,100 L250,120 L330,80 L410,140 L490,110 L570,90 L650,100 L650,220 L90,220 Z"
+                  fill="url(#blueGradient)" opacity="0.3" />
+            <!-- eCPM line -->
+            <path d="M90,130 L170,100 L250,120 L330,80 L410,140 L490,110 L570,90 L650,100"
+                  fill="none" stroke="#3b82f6" stroke-width="3" />
+            <!-- Data points -->
+            <g fill="#3b82f6">
+              <circle cx="90" cy="130" r="5" />
+              <circle cx="170" cy="100" r="5" />
+              <circle cx="250" cy="120" r="5" />
+              <circle cx="330" cy="80" r="5" />
+              <circle cx="410" cy="140" r="5" />
+              <circle cx="490" cy="110" r="5" />
+              <circle cx="570" cy="90" r="5" />
+              <circle cx="650" cy="100" r="5" />
+            </g>
+            <!-- Gradient definition -->
+            <defs>
+              <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.4" />
+                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
+              </linearGradient>
+            </defs>
+            <!-- Opportunity zone -->
+            <rect x="50" y="40" width="630" height="162" fill="rgba(34, 197, 94, 0.05)" />
+            <text x="365" y="30" fill="#22c55e" font-size="12" text-anchor="middle">Opportunity Zone: $120K/year uncaptured</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="recommendation-panel">
+        <div class="rec-header">
+          <div class="rec-icon">AI</div>
+          <div>
+            <div class="rec-title">AI Recommendation</div>
+            <div class="rec-subtitle">Based on market analysis</div>
+          </div>
+        </div>
+        <div class="rec-content">
+          <div class="rec-item">
+            <div class="rec-number">1</div>
+            <div class="rec-text">
+              <strong>Increase floor to $1.50</strong><br>
+              Current clearing prices support a higher floor without volume loss.
+            </div>
+          </div>
+          <div class="rec-item">
+            <div class="rec-number">2</div>
+            <div class="rec-text">
+              <strong>Enable dynamic flooring</strong><br>
+              Implement time-of-day adjustments to capture premium traffic.
+            </div>
+          </div>
+          <div class="rec-item">
+            <div class="rec-number">3</div>
+            <div class="rec-text">
+              <strong>Request deal review</strong><br>
+              Contact T-Mobile rep to discuss optimization opportunities.
+            </div>
+          </div>
+        </div>
+        <button class="action-button">Apply Recommendations</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <div class="nav-buttons">
+    <button class="nav-btn" id="prevBtn" onclick="prevStage()" style="display: none;">Previous</button>
+    <button class="nav-btn primary" id="nextBtn" onclick="nextStage()">Skip to Results</button>
+  </div>
+
+  <script>
+    let currentStage = 1;
+    let scanProgress = 0;
+    let videoPlaying = false;
+
+    // SSP scan simulation data
+    const ssps = [
+      { id: 'magnite', name: 'Magnite', statuses: ['Authenticating...', 'Fetching deals...', 'Analyzing 847 deals...', 'Processing data...', 'Complete'] },
+      { id: 'index', name: 'Index', statuses: ['Connecting...', 'Authenticating...', 'Fetching deals...', 'Analyzing 312 deals...', 'Complete'] },
+      { id: 'triplelift', name: 'TripleLift', statuses: ['Waiting...', 'Connecting...', 'Fetching deals...', 'Analyzing 156 deals...', 'Complete'] },
+      { id: 'xandr', name: 'Xandr', statuses: ['Waiting...', 'Connecting...', 'Fetching deals...', 'Analyzing 89 deals...', 'Complete'] }
+    ];
+
+    // Findings data
+    const findings = [
+      { type: 'warning', title: 'Pricing anomaly detected', detail: 'T-Mobile Mobile - eCPM 5x above floor', impact: '+$10K/mo potential', delay: 8000 },
+      { type: 'critical', title: 'Volume collapse', detail: 'T-Mobile Desktop - 99% drop over 7 months', impact: 'Investigate urgently', delay: 15000 },
+      { type: 'warning', title: 'Zero fill rate', detail: 'Apple TV+ - 19K requests, 0 responses', impact: 'Deal misconfigured', delay: 22000 }
+    ];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      const video = document.getElementById('magniteVideo');
+      video.play();
+      videoPlaying = true;
+      startScanSimulation();
+    });
+
+    function startScanSimulation() {
+      // Magnite progress (synced with video)
+      let magniteProgress = 0;
+      const magniteInterval = setInterval(() => {
+        magniteProgress += 2;
+        if (magniteProgress > 100) magniteProgress = 100;
+        updateSSP('magnite', magniteProgress);
+        if (magniteProgress >= 100) clearInterval(magniteInterval);
+      }, 500);
+
+      // Other SSPs with delays
+      setTimeout(() => startSSPProgress('index'), 3000);
+      setTimeout(() => startSSPProgress('triplelift'), 6000);
+      setTimeout(() => startSSPProgress('xandr'), 9000);
+
+      // Add findings
+      findings.forEach(finding => {
+        setTimeout(() => addFinding(finding), finding.delay);
+      });
+    }
+
+    function startSSPProgress(sspId) {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 5 + 2;
+        if (progress > 100) progress = 100;
+        updateSSP(sspId, progress);
+        if (progress >= 100) clearInterval(interval);
+      }, 400);
+    }
+
+    function updateSSP(sspId, progress) {
+      const ssp = ssps.find(s => s.id === sspId);
+      const statusIndex = Math.min(Math.floor(progress / 25), 4);
+
+      document.getElementById(`${sspId}Status`).textContent = ssp.statuses[statusIndex];
+      document.getElementById(`${sspId}Percent`).textContent = `${Math.round(progress)}%`;
+      document.getElementById(`${sspId}Fill`).style.width = `${progress}%`;
+    }
+
+    function addFinding(finding) {
+      const list = document.getElementById('findingsList');
+      const count = document.getElementById('findingsCount');
+
+      const item = document.createElement('div');
+      item.className = `finding-item ${finding.type}`;
+      item.innerHTML = `
+        <div class="finding-icon ${finding.type}">${finding.type === 'critical' ? '!' : '?'}</div>
+        <div class="finding-content">
+          <div class="finding-title">${finding.title}</div>
+          <div class="finding-detail">${finding.detail}</div>
+          <div class="finding-impact">${finding.impact}</div>
+        </div>
+      `;
+      list.appendChild(item);
+
+      // Trigger animation
+      setTimeout(() => item.classList.add('visible'), 50);
+
+      // Update count
+      const currentCount = list.children.length;
+      count.textContent = `${currentCount} issue${currentCount > 1 ? 's' : ''} detected`;
+    }
+
+    function goToStage(stage) {
+      document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+      document.getElementById(`stage${stage}`).classList.add('active');
+      currentStage = stage;
+      updateNavButtons();
+
+      if (stage > 1) {
+        document.getElementById('statusDot').classList.remove('scanning');
+        document.getElementById('statusDot').classList.add('complete');
+        document.getElementById('statusText').textContent = 'Analysis Complete';
+      }
+    }
+
+    function nextStage() {
+      if (currentStage < 3) {
+        goToStage(currentStage + 1);
+      }
+    }
+
+    function prevStage() {
+      if (currentStage > 1) {
+        goToStage(currentStage - 1);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById('prevBtn').style.display = currentStage > 1 ? 'block' : 'none';
+      document.getElementById('nextBtn').textContent = currentStage === 1 ? 'Skip to Results' : currentStage === 2 ? 'View Details' : 'Done';
+      if (currentStage === 3) {
+        document.getElementById('nextBtn').style.display = 'none';
+      } else {
+        document.getElementById('nextBtn').style.display = 'block';
+      }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') nextStage();
+      if (e.key === 'ArrowLeft') prevStage();
+    });
+  </script>
+</body>
+</html>

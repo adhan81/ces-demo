@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deal Watch</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="favicon.ico">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #f8f9fb;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --text-primary: #1a1a2e;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --accent-blue: #2563eb;
+      --accent-green: #059669;
+      --accent-yellow: #d97706;
+      --accent-red: #dc2626;
+      --accent-purple: #7c3aed;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 32px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-blue);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .logo-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .publisher-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-primary);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-dot.complete {
+      background: var(--accent-green);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    /* Main Layout */
+    .stage {
+      display: none;
+      padding: 24px 32px;
+      min-height: calc(100vh - 57px);
+    }
+
+    .stage.active {
+      display: block;
+    }
+
+    /* Stage 1: Scanning Layout */
+    .scan-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 20px;
+      height: calc(100vh - 105px);
+    }
+
+    /* SSP Queue Panel */
+    .ssp-queue {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+
+    .ssp-list {
+      padding: 12px;
+    }
+
+    .ssp-item {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: var(--bg-primary);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .ssp-item:last-child { margin-bottom: 0; }
+
+    .ssp-item.active {
+      background: #eff6ff;
+      border-color: var(--accent-blue);
+    }
+
+    .ssp-item.complete {
+      background: #f0fdf4;
+      border-color: var(--accent-green);
+    }
+
+    .ssp-item.queued {
+      opacity: 0.6;
+    }
+
+    .ssp-item-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .ssp-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .ssp-logo.magnite { background: #7c3aed; }
+    .ssp-logo.index { background: #0284c7; }
+    .ssp-logo.triplelift { background: #ea580c; }
+    .ssp-logo.xandr { background: #059669; }
+
+    .ssp-name {
+      font-weight: 500;
+      font-size: 13px;
+      flex: 1;
+    }
+
+    .ssp-status-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .ssp-status-badge.scanning { background: #dbeafe; color: #1d4ed8; }
+    .ssp-status-badge.queued { background: #f1f5f9; color: #64748b; }
+    .ssp-status-badge.complete { background: #dcfce7; color: #166534; }
+
+    .ssp-cli {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      min-height: 48px;
+      line-height: 1.5;
+    }
+
+    .cli-line {
+      display: block;
+    }
+
+    .cli-line::before {
+      content: '>';
+      color: var(--accent-blue);
+      margin-right: 6px;
+    }
+
+    .cli-line.success::before { color: var(--accent-green); }
+    .cli-line.warning::before { color: var(--accent-yellow); content: '!'; }
+
+    /* Video Panel */
+    .video-panel {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .video-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+    }
+
+    .video-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--accent-green);
+      font-weight: 500;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    .video-container {
+      flex: 1;
+      background: #1a1a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Findings Panel */
+    .findings-panel {
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .findings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+    }
+
+    .findings-count {
+      font-size: 12px;
+      color: var(--accent-yellow);
+      font-weight: 500;
+    }
+
+    .findings-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .finding-item {
+      padding: 12px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--border-color);
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s ease;
+    }
+
+    .finding-item.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .finding-item.high { border-left-color: var(--accent-red); }
+    .finding-item.medium { border-left-color: var(--accent-yellow); }
+    .finding-item.low { border-left-color: var(--accent-blue); }
+
+    .finding-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .finding-source {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+    .finding-priority {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .finding-priority.high { background: #fef2f2; color: #dc2626; }
+    .finding-priority.medium { background: #fffbeb; color: #d97706; }
+    .finding-priority.low { background: #eff6ff; color: #2563eb; }
+
+    .finding-title {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .finding-detail {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .finding-impact {
+      font-size: 11px;
+      color: var(--accent-green);
+      font-weight: 500;
+      margin-top: 6px;
+    }
+
+    /* Stage 2: Results */
+    .results-header {
+      margin-bottom: 24px;
+    }
+
+    .results-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .results-summary {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .results-summary strong {
+      color: var(--accent-green);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .result-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .result-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .result-card.high { border-top: 3px solid var(--accent-red); }
+    .result-card.medium { border-top: 3px solid var(--accent-yellow); }
+    .result-card.low { border-top: 3px solid var(--accent-blue); }
+
+    .result-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .result-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .result-ssp {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+    .result-deal {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .result-issue {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .result-impact-box {
+      padding: 12px;
+      background: #f0fdf4;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .impact-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .impact-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    .result-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-box {
+      padding: 10px;
+      background: var(--bg-primary);
+      border-radius: 6px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* Stage 3: Deep Dive */
+    .deep-dive-header {
+      margin-bottom: 24px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--accent-blue);
+      text-decoration: none;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+
+    .back-link:hover { text-decoration: underline; }
+
+    .deal-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .deal-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .deep-dive-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+    }
+
+    .chart-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .chart-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .chart-container {
+      height: 280px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Recommendation Panel - Magnite Style */
+    .rec-card {
+      background: #ffffff;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    .rec-header {
+      padding: 14px 16px;
+      background: #6b46c1; /* Magnite purple - flat, no gradient */
+      color: white;
+    }
+
+    .rec-header-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .rec-header-sub {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .rec-body {
+      padding: 16px;
+    }
+
+    .rec-action {
+      padding: 14px;
+      background: #f9fafb;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      border: 1px solid #e5e7eb;
+      border-left: 3px solid #6b46c1;
+    }
+
+    .rec-action-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .rec-action-icon {
+      width: 32px;
+      height: 32px;
+      background: #ede9fe; /* Light purple to match Magnite */
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #6b46c1;
+    }
+
+    .rec-action-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .rec-action-current {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .current-box {
+      flex: 1;
+      text-align: center;
+    }
+
+    .current-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .current-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .current-value.old { color: var(--text-muted); text-decoration: line-through; }
+    .current-value.new { color: var(--accent-green); }
+
+    .arrow-icon {
+      color: var(--text-muted);
+      font-size: 20px;
+    }
+
+    .rec-justification {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .justification-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b46c1;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .justification-list {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .justification-list li {
+      margin-bottom: 4px;
+    }
+
+    .rec-impact {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #f9fafb;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .rec-impact-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .rec-impact-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    .apply-btn {
+      width: 100%;
+      padding: 12px;
+      background: #6b46c1; /* Magnite purple */
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .apply-btn:hover {
+      background: #5b3aa8;
+    }
+
+    .apply-btn.success {
+      background: #059669;
+    }
+
+    .apply-btn.loading {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    /* Floor Change Video Section - Full width beneath graph */
+    .floor-change-video {
+      display: none;
+      margin-top: 24px;
+    }
+
+    .floor-change-video.visible {
+      display: block;
+    }
+
+    .floor-change-video .video-wrapper {
+      background: #1a1a2e;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      box-shadow: var(--shadow-md);
+    }
+
+    .floor-change-video .video-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #6b46c1;
+      color: white;
+    }
+
+    .floor-change-video .video-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .floor-change-video .video-status {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .floor-change-video .video-status .dot {
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    .floor-change-video video {
+      width: 100%;
+      height: auto;
+      max-height: 500px;
+      object-fit: contain;
+      display: block;
+      background: #1a1a2e;
+    }
+
+    .floor-change-video .video-placeholder {
+      padding: 80px 20px;
+      text-align: center;
+      color: #94a3b8;
+      background: #1a1a2e;
+    }
+
+    .floor-change-video .video-placeholder-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+
+    .floor-change-video .video-placeholder-text {
+      font-size: 15px;
+    }
+
+    /* Success Modal */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .success-overlay.visible {
+      display: flex;
+    }
+
+    .success-modal {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+      color: var(--accent-green);
+    }
+
+    .success-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .success-detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .success-stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .success-stat {
+      flex: 1;
+      padding: 12px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+    }
+
+    .success-stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .success-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    .close-btn {
+      padding: 12px 32px;
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Navigation */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 32px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn.secondary {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .nav-btn.primary {
+      background: var(--accent-blue);
+      border: 1px solid var(--accent-blue);
+      color: white;
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Auto-progress click animation */
+    .finding-item.auto-clicking,
+    .result-card.auto-clicking {
+      animation: clickPulse 0.8s ease-out;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4), var(--shadow-md);
+      position: relative;
+    }
+
+    .finding-item.auto-clicking::after,
+    .result-card.auto-clicking::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      background: rgba(37, 99, 235, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      animation: clickRipple 0.6s ease-out forwards;
+    }
+
+    @keyframes clickPulse {
+      0% { transform: scale(1); }
+      30% { transform: scale(0.98); }
+      60% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes clickRipple {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+    }
+
+    /* Cursor indicator for auto-click */
+    .click-cursor {
+      position: fixed;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .click-cursor.visible {
+      opacity: 1;
+    }
+
+    .click-cursor svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    /* Intro Animation Overlay */
+    .intro-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.5s ease;
+    }
+
+    .intro-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .intro-title {
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeInUp 0.5s ease forwards;
+    }
+
+    .credential-flow {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .cred-box {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 16px 20px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .cred-box.visible {
+      animation: fadeInUp 0.4s ease forwards;
+    }
+
+    .cred-box-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .cred-box-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cred-box-value {
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .cred-arrow {
+      color: rgba(255,255,255,0.4);
+      font-size: 24px;
+      opacity: 0;
+    }
+
+    .cred-arrow.visible {
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .intro-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+    }
+
+    .intro-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Suggested Action Badge */
+    .suggested-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #eff6ff;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--accent-blue);
+      font-weight: 500;
+    }
+
+    .suggested-action-icon {
+      font-size: 14px;
+    }
+
+    /* Two-row results grid for 6 cards */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">DW</div>
+      <span class="logo-text">Deal Watch</span>
+    </div>
+    <div class="header-right">
+      <div class="publisher-badge">
+        <span>Publisher:</span>
+        <strong>Redfin Media</strong>
+      </div>
+      <div class="status-indicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Scanning...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stage 1: Scanning -->
+  <section class="stage active" id="stage1">
+    <div class="scan-layout">
+      <!-- SSP Queue -->
+      <div class="ssp-queue">
+        <div class="panel-header">SSP Connections</div>
+        <div class="ssp-list">
+          <div class="ssp-item active" id="magniteItem">
+            <div class="ssp-item-header">
+              <div class="ssp-logo magnite">M</div>
+              <span class="ssp-name">Magnite DV+</span>
+              <span class="ssp-status-badge scanning" id="magniteBadge">Scanning</span>
+            </div>
+            <div class="ssp-cli" id="magniteCli">
+              <span class="cli-line">Connecting to API...</span>
+            </div>
+          </div>
+
+          <div class="ssp-item queued" id="indexItem">
+            <div class="ssp-item-header">
+              <div class="ssp-logo index">IX</div>
+              <span class="ssp-name">Index Exchange</span>
+              <span class="ssp-status-badge queued" id="indexBadge">Queued</span>
+            </div>
+            <div class="ssp-cli" id="indexCli">
+              <span class="cli-line">Waiting...</span>
+            </div>
+          </div>
+
+          <div class="ssp-item queued" id="tripleliftItem">
+            <div class="ssp-item-header">
+              <div class="ssp-logo triplelift">TL</div>
+              <span class="ssp-name">TripleLift</span>
+              <span class="ssp-status-badge queued" id="tripleliftBadge">Queued</span>
+            </div>
+            <div class="ssp-cli" id="tripleliftCli">
+              <span class="cli-line">Waiting...</span>
+            </div>
+          </div>
+
+          <div class="ssp-item queued" id="xandrItem">
+            <div class="ssp-item-header">
+              <div class="ssp-logo xandr">XN</div>
+              <span class="ssp-name">Xandr</span>
+              <span class="ssp-status-badge queued" id="xandrBadge">Queued</span>
+            </div>
+            <div class="ssp-cli" id="xandrCli">
+              <span class="cli-line">Waiting...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Panel -->
+      <div class="video-panel">
+        <div class="video-header">
+          <div class="video-title">
+            <div class="ssp-logo magnite" style="width:20px;height:20px;font-size:9px;">M</div>
+            <span>Magnite DV+ - Live Session</span>
+          </div>
+          <div class="live-badge">
+            <div class="live-dot"></div>
+            <span>Live</span>
+          </div>
+        </div>
+        <div class="video-container">
+          <!-- Intro Animation -->
+          <div class="intro-overlay" id="introOverlay">
+            <div class="intro-title">Initializing SSP Connection</div>
+            <div class="credential-flow">
+              <div class="cred-box" id="credBox1">
+                <div class="cred-box-icon">🔐</div>
+                <div class="cred-box-label">API Key</div>
+                <div class="cred-box-value">••••••••</div>
+              </div>
+              <div class="cred-arrow" id="credArrow1">→</div>
+              <div class="cred-box" id="credBox2">
+                <div class="cred-box-icon">🔑</div>
+                <div class="cred-box-label">OAuth Token</div>
+                <div class="cred-box-value">Generating...</div>
+              </div>
+              <div class="cred-arrow" id="credArrow2">→</div>
+              <div class="cred-box" id="credBox3">
+                <div class="cred-box-icon">✓</div>
+                <div class="cred-box-label">Session</div>
+                <div class="cred-box-value">Establishing...</div>
+              </div>
+            </div>
+            <div class="intro-status" id="introStatus">
+              <div class="intro-spinner"></div>
+              <span>Loading Magnite credentials...</span>
+            </div>
+          </div>
+          <video id="magniteVideo" muted playbackRate="2">
+            <source src="recordings-v7/magnite-recording.webm" type="video/webm">
+          </video>
+        </div>
+      </div>
+
+      <!-- Findings Panel -->
+      <div class="findings-panel">
+        <div class="findings-header">
+          <span class="panel-header" style="padding:0;background:none;border:none;">Findings</span>
+          <span class="findings-count" id="findingsCount">0 issues</span>
+        </div>
+        <div class="findings-list" id="findingsList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 2: Results -->
+  <section class="stage" id="stage2">
+    <div class="results-header">
+      <h1 class="results-title">Scan Complete</h1>
+      <p class="results-summary">Found <strong>6 optimization opportunities</strong> across 4 SSPs with total potential of <strong style="color:var(--accent-green)">+$47,300/mo</strong></p>
+    </div>
+
+    <div class="results-grid">
+      <!-- Card 1: Best Buy - HIGH -->
+      <div class="result-card high" onclick="goToStage(3)">
+        <div class="result-meta">
+          <div class="result-rank">1</div>
+          <span class="result-ssp">Magnite DV+</span>
+        </div>
+        <div class="result-deal">Best Buy</div>
+        <div class="result-issue">Floor at $0.30 but clearing at $1.50-2.80. Significant revenue left on table.</div>
+        <div class="result-impact-box">
+          <div class="impact-label">Monthly Opportunity</div>
+          <div class="impact-value">+$11,200</div>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <div class="stat-label">Avg eCPM</div>
+            <div class="stat-value">$2.15</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Floor</div>
+            <div class="stat-value">$0.30</div>
+          </div>
+        </div>
+        <div class="suggested-action">
+          <span class="suggested-action-icon">↑</span>
+          Raise floor to $1.15
+        </div>
+      </div>
+
+      <!-- Card 2: T-Mobile Desktop - MEDIUM -->
+      <div class="result-card medium">
+        <div class="result-meta">
+          <div class="result-rank">2</div>
+          <span class="result-ssp">Magnite DV+</span>
+        </div>
+        <div class="result-deal">T-Mobile Desktop</div>
+        <div class="result-issue">Volume dropped 99% since January. Deal may need renewal or buyer outreach.</div>
+        <div class="result-impact-box">
+          <div class="impact-label">Monthly Opportunity</div>
+          <div class="impact-value">+$2,500</div>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <div class="stat-label">Jan Imps</div>
+            <div class="stat-value">1.2M</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Aug Imps</div>
+            <div class="stat-value">12K</div>
+          </div>
+        </div>
+        <div class="suggested-action">
+          <span class="suggested-action-icon">📞</span>
+          Contact buyer for renewal
+        </div>
+      </div>
+
+      <!-- Card 3: Progressive - MEDIUM -->
+      <div class="result-card medium">
+        <div class="result-meta">
+          <div class="result-rank">3</div>
+          <span class="result-ssp">TripleLift</span>
+        </div>
+        <div class="result-deal">Progressive Insurance</div>
+        <div class="result-issue">Deal priced 40% below market benchmark for similar inventory.</div>
+        <div class="result-impact-box">
+          <div class="impact-label">Monthly Opportunity</div>
+          <div class="impact-value">+$1,200</div>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <div class="stat-label">Your eCPM</div>
+            <div class="stat-value">$1.20</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Benchmark</div>
+            <div class="stat-value">$2.00</div>
+          </div>
+        </div>
+        <div class="suggested-action">
+          <span class="suggested-action-icon">📊</span>
+          Renegotiate deal terms
+        </div>
+      </div>
+
+      <!-- Card 4: HomeAway - LOW -->
+      <div class="result-card low">
+        <div class="result-meta">
+          <div class="result-rank">4</div>
+          <span class="result-ssp">Index Exchange</span>
+        </div>
+        <div class="result-deal">HomeAway / VRBO</div>
+        <div class="result-issue">No activity in 60+ days. Deal may be stale or buyer paused spend.</div>
+        <div class="result-impact-box">
+          <div class="impact-label">Monthly Opportunity</div>
+          <div class="impact-value">+$800</div>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <div class="stat-label">Last Active</div>
+            <div class="stat-value">62 days</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Prev. Rev</div>
+            <div class="stat-value">$800/mo</div>
+          </div>
+        </div>
+        <div class="suggested-action">
+          <span class="suggested-action-icon">🔄</span>
+          Reactivate or archive deal
+        </div>
+      </div>
+
+      <!-- Card 5: Apple TV+ - LOW -->
+      <div class="result-card low">
+        <div class="result-meta">
+          <div class="result-rank">5</div>
+          <span class="result-ssp">Magnite DV+</span>
+        </div>
+        <div class="result-deal">Apple TV+</div>
+        <div class="result-issue">19K bid requests, zero responses over 5 months. Deal inactive or misconfigured.</div>
+        <div class="result-impact-box">
+          <div class="impact-label">Monthly Opportunity</div>
+          <div class="impact-value">+$500</div>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <div class="stat-label">Requests</div>
+            <div class="stat-value">19K</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Responses</div>
+            <div class="stat-value" style="color:var(--accent-red)">0</div>
+          </div>
+        </div>
+        <div class="suggested-action">
+          <span class="suggested-action-icon">🔧</span>
+          Check deal configuration
+        </div>
+      </div>
+
+      <!-- Card 6: Xandr - INFO -->
+      <div class="result-card low">
+        <div class="result-meta">
+          <div class="result-rank">6</div>
+          <span class="result-ssp">Xandr</span>
+        </div>
+        <div class="result-deal">Geico Auto</div>
+        <div class="result-issue">Fill rate at 12% vs 28% category average. Potential targeting mismatch.</div>
+        <div class="result-impact-box">
+          <div class="impact-label">Monthly Opportunity</div>
+          <div class="impact-value">+$500</div>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <div class="stat-label">Fill Rate</div>
+            <div class="stat-value" style="color:var(--accent-yellow)">12%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Category Avg</div>
+            <div class="stat-value">28%</div>
+          </div>
+        </div>
+        <div class="suggested-action">
+          <span class="suggested-action-icon">🎯</span>
+          Review targeting criteria
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stage 3: Deep Dive -->
+  <section class="stage" id="stage3">
+    <div class="deep-dive-header">
+      <a class="back-link" onclick="goToStage(2)">← Back to results</a>
+      <h1 class="deal-title">Best Buy Deal</h1>
+      <p class="deal-meta">Deal ID: 3768900 · Magnite DV+ · Mobile Web</p>
+    </div>
+
+    <div class="deep-dive-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">eCPM Performance (Jan - Aug 2025)</div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--accent-blue)"></div>
+              <span>eCPM</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--accent-red)"></div>
+              <span>Current Floor</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--accent-green)"></div>
+              <span>Proposed Floor</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 700 260">
+            <!-- Grid -->
+            <g stroke="#e2e8f0" stroke-width="1">
+              <line x1="50" y1="30" x2="680" y2="30" />
+              <line x1="50" y1="80" x2="680" y2="80" />
+              <line x1="50" y1="130" x2="680" y2="130" />
+              <line x1="50" y1="180" x2="680" y2="180" />
+              <line x1="50" y1="230" x2="680" y2="230" />
+            </g>
+            <!-- Y Labels -->
+            <g fill="#64748b" font-size="11" font-family="Inter, sans-serif">
+              <text x="40" y="34" text-anchor="end">$3</text>
+              <text x="40" y="84" text-anchor="end">$2</text>
+              <text x="40" y="134" text-anchor="end">$1</text>
+              <text x="40" y="184" text-anchor="end">$0.50</text>
+              <text x="40" y="234" text-anchor="end">$0</text>
+            </g>
+            <!-- X Labels -->
+            <g fill="#64748b" font-size="11" font-family="Inter, sans-serif">
+              <text x="90" y="250" text-anchor="middle">Jan</text>
+              <text x="170" y="250" text-anchor="middle">Feb</text>
+              <text x="250" y="250" text-anchor="middle">Mar</text>
+              <text x="330" y="250" text-anchor="middle">Apr</text>
+              <text x="410" y="250" text-anchor="middle">May</text>
+              <text x="490" y="250" text-anchor="middle">Jun</text>
+              <text x="570" y="250" text-anchor="middle">Jul</text>
+              <text x="650" y="250" text-anchor="middle">Aug</text>
+            </g>
+            <!-- Current Floor Line ($0.30) -->
+            <line x1="50" y1="210" x2="680" y2="210" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,4" />
+            <text x="685" y="214" fill="#dc2626" font-size="10">$0.30</text>
+            <!-- Proposed Floor Line ($1.15) -->
+            <line x1="50" y1="120" x2="680" y2="120" stroke="#059669" stroke-width="2" stroke-dasharray="6,4" id="proposedLine" opacity="0" />
+            <text x="685" y="124" fill="#059669" font-size="10" id="proposedLabel" opacity="0">$1.15</text>
+            <!-- eCPM Area -->
+            <path d="M90,95 L170,70 L250,85 L330,55 L410,100 L490,75 L570,60 L650,70 L650,230 L90,230 Z"
+                  fill="url(#blueGrad)" opacity="0.2" />
+            <!-- eCPM Line -->
+            <path d="M90,95 L170,70 L250,85 L330,55 L410,100 L490,75 L570,60 L650,70"
+                  fill="none" stroke="#2563eb" stroke-width="2.5" />
+            <!-- Data Points -->
+            <g fill="#2563eb">
+              <circle cx="90" cy="95" r="4" />
+              <circle cx="170" cy="70" r="4" />
+              <circle cx="250" cy="85" r="4" />
+              <circle cx="330" cy="55" r="4" />
+              <circle cx="410" cy="100" r="4" />
+              <circle cx="490" cy="75" r="4" />
+              <circle cx="570" cy="60" r="4" />
+              <circle cx="650" cy="70" r="4" />
+            </g>
+            <defs>
+              <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.3" />
+                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:0" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-header-title">Recommended Action</div>
+          <div class="rec-header-sub">Based on 8 months of performance data</div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-action">
+            <div class="rec-action-header">
+              <div class="rec-action-icon">↑</div>
+              <div class="rec-action-title">Raise Price Floor</div>
+            </div>
+            <div class="rec-action-current">
+              <div class="current-box">
+                <div class="current-label">Current Floor</div>
+                <div class="current-value old">$0.30</div>
+              </div>
+              <div class="arrow-icon">→</div>
+              <div class="current-box">
+                <div class="current-label">New Floor</div>
+                <div class="current-value new">$1.15</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rec-justification">
+            <div class="justification-title">Why this works:</div>
+            <ul class="justification-list">
+              <li>Average clearing eCPM of $1.82 over past 90 days</li>
+              <li>Best Buy campaigns consistently clear 3.2x above current floor</li>
+              <li>87% of winning bids exceed $1.15 threshold</li>
+              <li>Conservative increase captures 65% of upside while maintaining fill rate</li>
+            </ul>
+          </div>
+
+          <div class="rec-impact">
+            <span class="rec-impact-label">Estimated Monthly Impact</span>
+            <span class="rec-impact-value">+$11,200</span>
+          </div>
+
+          <button class="apply-btn" id="applyBtn" onclick="applyChange()">
+            Apply Floor Change
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floor Change Video (shown after apply) - Full width beneath the grid -->
+    <div class="floor-change-video" id="floorChangeVideo">
+      <div class="video-wrapper">
+        <div class="video-header">
+          <span class="video-title">Applying in Magnite DV+</span>
+          <span class="video-status">
+            <span class="dot"></span>
+            <span>Live</span>
+          </span>
+        </div>
+        <!-- Video will be loaded when available -->
+        <video id="floorChangeVideoPlayer" muted autoplay>
+          <source src="recordings-bestbuy/floor-change.webm" type="video/webm">
+        </video>
+        <!-- Placeholder shown if video not available -->
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="video-placeholder-icon">🎬</div>
+          <div class="video-placeholder-text">Floor change recording will appear here</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Success Modal -->
+  <div class="success-overlay" id="successModal">
+    <div class="success-modal">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Floor Updated Successfully</div>
+      <div class="success-detail">
+        Best Buy deal floor has been updated from $0.30 to $1.15. Changes are now live in Magnite DV+.
+      </div>
+      <div class="success-stats">
+        <div class="success-stat">
+          <div class="success-stat-label">New Floor</div>
+          <div class="success-stat-value">$1.15</div>
+        </div>
+        <div class="success-stat">
+          <div class="success-stat-label">Est. Monthly</div>
+          <div class="success-stat-value">+$11.2K</div>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeModal()">Done</button>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-bar">
+    <button class="nav-btn secondary" id="prevBtn" onclick="prevStage()" style="display:none;">Back</button>
+    <button class="nav-btn primary" id="nextBtn" onclick="nextStage()">View Results</button>
+  </div>
+
+  <!-- Click cursor for auto-progress -->
+  <div class="click-cursor" id="clickCursor">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 4L10.5 20L13 13L20 10.5L4 4Z" fill="white" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <script>
+    let currentStage = 1;
+    let autoProgressEnabled = true; // Set to false to disable auto-progress
+
+    // Intro animation duration (ms) - video starts after this
+    const INTRO_DURATION = 7000;
+
+    // Auto-progress timing (in ms) - includes intro offset
+    const AUTO_PROGRESS_TIMING = {
+      stage1ToStage2: INTRO_DURATION + 12000,  // After scan shows findings (faster)
+      stage2ToStage3: 3000    // Time to view results before diving in
+    };
+
+    // CLI messages for each SSP (offset by intro duration) - FASTER timing
+    const cliSequences = {
+      magnite: [
+        { text: 'Connecting to API...', delay: INTRO_DURATION + 0 },
+        { text: 'Authenticated ✓', delay: INTRO_DURATION + 800, class: 'success' },
+        { text: 'Fetching deal inventory...', delay: INTRO_DURATION + 1500 },
+        { text: 'Found 847 active deals', delay: INTRO_DURATION + 2500, class: 'success' },
+        { text: 'Analyzing pricing data...', delay: INTRO_DURATION + 3200 },
+        { text: 'Checking Best Buy...', delay: INTRO_DURATION + 4200 },
+        { text: 'Floor anomaly detected', delay: INTRO_DURATION + 5200, class: 'warning' },
+        { text: 'Checking T-Mobile Desktop...', delay: INTRO_DURATION + 6500 },
+        { text: 'Volume drop detected', delay: INTRO_DURATION + 7500, class: 'warning' },
+        { text: 'Checking Apple TV+...', delay: INTRO_DURATION + 8500 },
+        { text: 'Zero fill rate detected', delay: INTRO_DURATION + 9500, class: 'warning' },
+        { text: 'Scan complete', delay: INTRO_DURATION + 11000, class: 'success' }
+      ],
+      index: [
+        { text: 'Connecting...', delay: INTRO_DURATION + 8000 },
+        { text: 'Authenticated ✓', delay: INTRO_DURATION + 9000, class: 'success' },
+        { text: 'Scanning 312 deals...', delay: INTRO_DURATION + 10000 },
+        { text: 'Found 1 optimization', delay: INTRO_DURATION + 12000, class: 'success' }
+      ],
+      triplelift: [
+        { text: 'Connecting...', delay: INTRO_DURATION + 10000 },
+        { text: 'Authenticated ✓', delay: INTRO_DURATION + 11000, class: 'success' },
+        { text: 'Scanning 156 deals...', delay: INTRO_DURATION + 12000 },
+        { text: 'Found 1 optimization', delay: INTRO_DURATION + 13500, class: 'success' }
+      ],
+      xandr: [
+        { text: 'Connecting...', delay: INTRO_DURATION + 12000 },
+        { text: 'Authenticated ✓', delay: INTRO_DURATION + 13000, class: 'success' },
+        { text: 'Scanning 89 deals...', delay: INTRO_DURATION + 14000 },
+        { text: 'No issues found', delay: INTRO_DURATION + 15000, class: 'success' }
+      ]
+    };
+
+    // Findings with timing (offset by intro duration) - FASTER timing
+    const findings = [
+      { source: 'Magnite', priority: 'high', title: 'Price floor too low', detail: 'Best Buy - eCPM 6x above floor', impact: '+$11.2K/mo', delay: INTRO_DURATION + 5500 },
+      { source: 'Magnite', priority: 'medium', title: 'Volume collapse', detail: 'T-Mobile Desktop - 99% drop in 7 months', impact: 'Review deal', delay: INTRO_DURATION + 7800 },
+      { source: 'Magnite', priority: 'low', title: 'Zero fill rate', detail: 'Apple TV+ - No responses in 5 months', impact: 'Check config', delay: INTRO_DURATION + 10000 },
+      { source: 'Index', priority: 'low', title: 'Stale deal detected', detail: 'HomeAway - No activity 60+ days', impact: '+$800/mo', delay: INTRO_DURATION + 12500 },
+      { source: 'TripleLift', priority: 'medium', title: 'Below market rate', detail: 'Progressive - 40% under benchmark', impact: '+$1.2K/mo', delay: INTRO_DURATION + 14000 }
+    ];
+
+    // Intro animation sequence
+    function runIntroAnimation() {
+      const intro = document.getElementById('introOverlay');
+      const status = document.getElementById('introStatus');
+
+      // Animate credential boxes sequentially
+      setTimeout(() => {
+        document.getElementById('credBox1').classList.add('visible');
+      }, 500);
+
+      setTimeout(() => {
+        document.getElementById('credArrow1').classList.add('visible');
+      }, 1200);
+
+      setTimeout(() => {
+        document.getElementById('credBox2').classList.add('visible');
+        status.querySelector('span').textContent = 'Generating OAuth token...';
+      }, 1800);
+
+      setTimeout(() => {
+        document.getElementById('credBox2').querySelector('.cred-box-value').textContent = 'Generated ✓';
+        document.getElementById('credArrow2').classList.add('visible');
+      }, 3000);
+
+      setTimeout(() => {
+        document.getElementById('credBox3').classList.add('visible');
+        status.querySelector('span').textContent = 'Establishing secure session...';
+      }, 3600);
+
+      setTimeout(() => {
+        document.getElementById('credBox3').querySelector('.cred-box-value').textContent = 'Connected ✓';
+        status.querySelector('span').textContent = 'Launching browser session...';
+      }, 5000);
+
+      // Hide intro and start video
+      setTimeout(() => {
+        intro.classList.add('hidden');
+        const video = document.getElementById('magniteVideo');
+        video.playbackRate = 2.0;
+        video.play();
+      }, INTRO_DURATION);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      runIntroAnimation();
+      startScanSequence();
+    });
+
+    function startScanSequence() {
+      // Run CLI sequences for each SSP
+      Object.keys(cliSequences).forEach(ssp => {
+        const sequence = cliSequences[ssp];
+        sequence.forEach((msg, i) => {
+          setTimeout(() => {
+            updateCli(ssp, msg.text, msg.class);
+            if (i === 0 && ssp !== 'magnite') {
+              // Start scanning
+              document.getElementById(`${ssp}Item`).classList.remove('queued');
+              document.getElementById(`${ssp}Item`).classList.add('active');
+              document.getElementById(`${ssp}Badge`).textContent = 'Scanning';
+              document.getElementById(`${ssp}Badge`).className = 'ssp-status-badge scanning';
+            }
+            if (i === sequence.length - 1) {
+              // Complete
+              document.getElementById(`${ssp}Item`).classList.remove('active');
+              document.getElementById(`${ssp}Item`).classList.add('complete');
+              document.getElementById(`${ssp}Badge`).textContent = 'Complete';
+              document.getElementById(`${ssp}Badge`).className = 'ssp-status-badge complete';
+            }
+          }, msg.delay);
+        });
+      });
+
+      // Add findings at appropriate times
+      findings.forEach(f => {
+        setTimeout(() => addFinding(f), f.delay);
+      });
+    }
+
+    function updateCli(ssp, text, className = '') {
+      const cli = document.getElementById(`${ssp}Cli`);
+      const line = document.createElement('span');
+      line.className = `cli-line ${className}`;
+      line.textContent = text;
+      cli.innerHTML = '';
+      cli.appendChild(line);
+    }
+
+    function addFinding(finding) {
+      const list = document.getElementById('findingsList');
+      const item = document.createElement('div');
+      item.className = `finding-item ${finding.priority}`;
+      item.innerHTML = `
+        <div class="finding-header">
+          <span class="finding-source">${finding.source}</span>
+          <span class="finding-priority ${finding.priority}">${finding.priority.toUpperCase()}</span>
+        </div>
+        <div class="finding-title">${finding.title}</div>
+        <div class="finding-detail">${finding.detail}</div>
+        <div class="finding-impact">${finding.impact}</div>
+      `;
+      list.appendChild(item);
+      setTimeout(() => item.classList.add('visible'), 50);
+
+      // Update count
+      const count = list.querySelectorAll('.finding-item').length;
+      document.getElementById('findingsCount').textContent = `${count} issue${count > 1 ? 's' : ''}`;
+    }
+
+    function goToStage(stage) {
+      document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+      document.getElementById(`stage${stage}`).classList.add('active');
+      currentStage = stage;
+      updateNav();
+
+      if (stage > 1) {
+        document.getElementById('statusDot').classList.add('complete');
+        document.getElementById('statusText').textContent = 'Complete';
+      }
+    }
+
+    function nextStage() {
+      if (currentStage < 3) goToStage(currentStage + 1);
+    }
+
+    function prevStage() {
+      if (currentStage > 1) goToStage(currentStage - 1);
+    }
+
+    function updateNav() {
+      document.getElementById('prevBtn').style.display = currentStage > 1 ? 'block' : 'none';
+      document.getElementById('nextBtn').textContent = currentStage === 1 ? 'View Results' : currentStage === 2 ? 'View Top Issue' : 'Done';
+      document.getElementById('nextBtn').style.display = currentStage === 3 ? 'none' : 'block';
+    }
+
+    function applyChange() {
+      const btn = document.getElementById('applyBtn');
+      btn.textContent = 'Applying...';
+      btn.classList.add('loading');
+
+      // Show proposed line on chart
+      document.getElementById('proposedLine').style.opacity = '1';
+      document.getElementById('proposedLabel').style.opacity = '1';
+
+      // Show floor change video section
+      const videoSection = document.getElementById('floorChangeVideo');
+      const videoPlayer = document.getElementById('floorChangeVideoPlayer');
+      const placeholder = document.getElementById('videoPlaceholder');
+
+      videoSection.classList.add('visible');
+
+      // Try to play the video, show placeholder if not available
+      videoPlayer.style.display = 'none';
+      placeholder.style.display = 'block';
+
+      videoPlayer.oncanplay = function() {
+        placeholder.style.display = 'none';
+        videoPlayer.style.display = 'block';
+        videoPlayer.play();
+      };
+
+      videoPlayer.onerror = function() {
+        placeholder.style.display = 'block';
+        videoPlayer.style.display = 'none';
+      };
+
+      videoPlayer.load();
+
+      // Show success after delay (or after video ends if available)
+      const showSuccess = () => {
+        btn.textContent = 'Applied ✓';
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        document.getElementById('successModal').classList.add('visible');
+      };
+
+      videoPlayer.onended = showSuccess;
+
+      // Fallback timeout if video doesn't play (increased to 45 seconds for longer videos)
+      setTimeout(() => {
+        if (!btn.classList.contains('success')) {
+          showSuccess();
+        }
+      }, 45000);
+    }
+
+    function closeModal() {
+      document.getElementById('successModal').classList.remove('visible');
+    }
+
+    // Keyboard nav
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') nextStage();
+      if (e.key === 'ArrowLeft') prevStage();
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Auto-progress functions
+    function simulateClick(element) {
+      return new Promise((resolve) => {
+        const cursor = document.getElementById('clickCursor');
+        const rect = element.getBoundingClientRect();
+
+        // Position cursor at element center
+        const targetX = rect.left + rect.width / 2 - 12;
+        const targetY = rect.top + rect.height / 2 - 12;
+
+        // Animate cursor to target
+        cursor.style.left = targetX + 'px';
+        cursor.style.top = targetY + 'px';
+        cursor.classList.add('visible');
+
+        // After cursor appears, trigger click animation
+        setTimeout(() => {
+          element.classList.add('auto-clicking');
+
+          // Remove animations and resolve
+          setTimeout(() => {
+            cursor.classList.remove('visible');
+            element.classList.remove('auto-clicking');
+            resolve();
+          }, 800);
+        }, 300);
+      });
+    }
+
+    function scheduleAutoProgress() {
+      if (!autoProgressEnabled) return;
+
+      // Schedule transition from Stage 1 to Stage 2
+      setTimeout(async () => {
+        if (currentStage !== 1) return; // User already navigated
+
+        // Find the first finding item and simulate click
+        const firstFinding = document.querySelector('.finding-item.high');
+        if (firstFinding) {
+          await simulateClick(firstFinding);
+        }
+
+        // Transition to Stage 2
+        goToStage(2);
+
+        // Schedule transition from Stage 2 to Stage 3
+        setTimeout(async () => {
+          if (currentStage !== 2) return; // User already navigated
+
+          // Find the first result card and simulate click
+          const firstCard = document.querySelector('.result-card.high');
+          if (firstCard) {
+            await simulateClick(firstCard);
+          }
+
+          // Transition to Stage 3
+          goToStage(3);
+        }, AUTO_PROGRESS_TIMING.stage2ToStage3);
+
+      }, AUTO_PROGRESS_TIMING.stage1ToStage2);
+    }
+
+    // Start auto-progress when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      // Existing video setup happens in the other DOMContentLoaded handler
+      // Schedule auto-progress after a brief delay
+      setTimeout(scheduleAutoProgress, 500);
+    });
+  </script>
+</body>
+</html>
