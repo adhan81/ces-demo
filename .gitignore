@@ -20,3 +20,20 @@ npm-debug.log*
 .env
 .env.local
 
+# Large video files - exclude old recordings and backups
+recordings/*.webm
+recordings-demo/
+recordings-final/
+recordings-v2/
+recordings-v4/
+recordings-v5/
+recordings-v6/
+recordings-v8/
+recordings-bestbuy/*backup*.webm
+recordings-bestbuy/*backup*.mov
+*.icloud
+
+# Keep only essential recordings
+!recordings-v7/magnite-recording.webm
+!recordings-bestbuy/floor-change.webm
+
