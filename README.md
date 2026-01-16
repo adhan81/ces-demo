@@ -1,6 +1,7 @@
 # CES Demo - Revenue Scanner / Deal Watch
 
 An interactive demo showcasing revenue optimization scanning across multiple SSPs (Supply-Side Platforms).
+Live Demo: 'https://dynamic-gumption-77ee77.netlify.app/demo-v2.html'
 
 ## Features
 
